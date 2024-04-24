@@ -20,6 +20,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.spotsmusic.R;
 import com.example.spotsmusic.analysis.PieChartView;
@@ -36,6 +37,7 @@ public class DietFragment extends Fragment {
     private SQLiteDatabase database;
     private TextView diet_total;
     Context context;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
 
     @Nullable
@@ -54,13 +56,20 @@ public class DietFragment extends Fragment {
 
         listview = (ListView)view.findViewById(R.id.diet_list);
         diet_total = (TextView)view.findViewById(R.id.diet_total);
+        swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swiperefreshlayout);
 
         DBManager dbmanager = new DBManager(context);
         database = dbmanager.openDatabase();
 
         setData();
         itemOnLongClick();
-
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                setData();
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
     }
 
     private void setData() {
@@ -76,6 +85,7 @@ public class DietFragment extends Fragment {
         cursor_total.moveToFirst();
         String total = String.format("%.0f", cursor_total.getDouble(0));
         diet_total.setText("今日总热量" + total + "大卡");
+        swipeRefreshLayout.setRefreshing(false);
     }
 
     private void itemOnLongClick() {

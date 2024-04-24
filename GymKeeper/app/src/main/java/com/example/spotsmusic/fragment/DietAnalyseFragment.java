@@ -23,6 +23,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.spotsmusic.R;
 import com.example.spotsmusic.analysis.PieChartView;
@@ -44,6 +45,7 @@ public class DietAnalyseFragment extends Fragment {
     private TextView text_right;
     private Spinner timeSpinner;
     Context context;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
 
     @Nullable
@@ -67,8 +69,14 @@ public class DietAnalyseFragment extends Fragment {
         text_left = (TextView) view.findViewById(R.id.analysis_text_left);
         text_right = (TextView) view.findViewById(R.id.analysis_text_right);
         timeSpinner = (Spinner) view.findViewById(R.id.analysis_time);
-
-        setData();
+        swipeRefreshLayout = (SwipeRefreshLayout)view.findViewById(R.id.swiperefreshlayout);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                setData();
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
 
     }
 
@@ -88,6 +96,7 @@ public class DietAnalyseFragment extends Fragment {
 
         text_left.setText("总热量(大卡):\n碳水化合物(克):\n蛋白质(克):\n脂肪(克):");
         text_right.setText(String.format("%.0f", total_heat) +"\n" + String.format("%.2f", total_carbohydrate) +"\n" + String.format("%.2f", total_protein) +"\n" + String.format("%.2f", total_fat));
+        swipeRefreshLayout.setRefreshing(false);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -97,12 +106,23 @@ public class DietAnalyseFragment extends Fragment {
         while(cursor.moveToNext()){
             time_list.add(cursor.getString(0));
         }
+        // 检查数据是否存在
+        if (time_list.isEmpty()) {
+            // 数据库中没有数据，清空时间选择器和图表数据
+            timeSpinner.setAdapter(null);
+            pieChartView.setPieItems(new PieChartView.PieItemBean[0]);
+            text_left.setText("总热量(大卡):\n碳水化合物(克):\n蛋白质(克):\n脂肪(克):");
+            text_right.setText("");
+            return;
+        }
+
         ArrayAdapter timeAdapter = new ArrayAdapter(context, android.R.layout.simple_spinner_item, time_list);
         timeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item); //样式
 
         timeSpinner.setAdapter(timeAdapter);
         timeSpinner.setSelection(time_list.size() - 1, true);
         timeSpinner.setOnItemSelectedListener(itemSelectedListener);
+        swipeRefreshLayout.setRefreshing(false);
     }
 
     private AdapterView.OnItemSelectedListener itemSelectedListener = new AdapterView.OnItemSelectedListener() {
@@ -123,6 +143,7 @@ public class DietAnalyseFragment extends Fragment {
     public void onResume() {
         super.onResume();
         setData();
+        swipeRefreshLayout.setRefreshing(false);
     }
 
 }
